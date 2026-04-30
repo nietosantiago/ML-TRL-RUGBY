@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.venv/
+venv/
+env/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+*.pyo
+
+# Entorno
+.env
+*.env.local
+
+# Data (no commitear datos crudos)
+data/raw/
+data/processed/
+data/models/
+logs/
+
+# Node / Next.js
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+frontend/.next/
+frontend/node_modules/
+
+# IDEs
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
+
+# Modelos ML (archivos grandes, usar Git LFS si es necesario)
+*.pkl
+*.joblib
+*.model
+*.bin
+!data/models/.gitkeep

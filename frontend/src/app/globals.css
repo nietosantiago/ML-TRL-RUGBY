@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --rugby-green: #1a5c2e;
+    --rugby-green-light: #2d8a49;
+    --rugby-dark: #0f2417;
+    --rugby-gold: #d4af37;
+  }
+  body {
+    @apply bg-gray-950 text-gray-100 font-sans antialiased;
+  }
+  h1, h2, h3 { @apply font-bold; }
+}
+
+@layer components {
+  .card {
+    @apply bg-gray-900 rounded-xl border border-gray-800 p-4;
+  }
+  .badge-win    { @apply bg-green-900 text-green-300 text-xs px-2 py-0.5 rounded-full; }
+  .badge-loss   { @apply bg-red-900   text-red-300   text-xs px-2 py-0.5 rounded-full; }
+  .badge-draw   { @apply bg-gray-700  text-gray-300  text-xs px-2 py-0.5 rounded-full; }
+}
