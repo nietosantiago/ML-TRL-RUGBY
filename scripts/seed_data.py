@@ -242,6 +242,107 @@ def seed_standings(cur, standings: list[dict], season_id_map: dict[int, int]) ->
     return len(rows)
 
 
+# ── Paso 5b: Partidos pendientes (fixture no jugado) ─────────────────────────
+
+def _round_robin_schedule(teams: list[int]) -> list[list[tuple[int, int]]]:
+    """
+    Genera un calendario round-robin para n equipos (n par).
+    Retorna lista de rondas, cada ronda es lista de (home_id, away_id).
+    Algoritmo de rotación estándar.
+    """
+    n = len(teams)
+    if n % 2 != 0:
+        teams = teams + [-1]   # bye
+        n += 1
+
+    rounds = []
+    fixed = teams[0]
+    rotating = list(teams[1:])
+
+    for _ in range(n - 1):
+        round_pairs = [(fixed, rotating[0])]
+        for i in range(1, n // 2):
+            round_pairs.append((rotating[i], rotating[n - 2 - i]))
+        rounds.append(round_pairs)
+        rotating = [rotating[-1]] + rotating[:-1]   # rotar
+
+    return rounds
+
+
+def seed_pending_matches(
+    cur,
+    all_matches: list[dict],
+    season_id_map: dict[int, int],
+    current_season: str = CURRENT_SEASON,
+) -> int:
+    """
+    Genera e inserta los partidos pendientes del torneo en curso.
+    Usa formato doble round-robin igual que las temporadas anteriores.
+    Retorna cantidad de partidos pendientes insertados.
+    """
+    year = int(current_season)
+    sid  = season_id_map.get(year)
+    if not sid:
+        return 0
+
+    # Equipos de la temporada actual
+    played_2026 = [m for m in all_matches if m["season"] == year]
+    team_ids: list[int] = sorted({
+        tid
+        for m in played_2026
+        for tid in (m["home_team_id"], m["away_team_id"])
+    })
+
+    if not team_ids:
+        return 0
+
+    # Pares ya jugados (ordered: home_id, away_id)
+    played_pairs: set[tuple[int, int]] = {
+        (m["home_team_id"], m["away_team_id"]) for m in played_2026
+    }
+
+    # Generar doble round-robin: 2 vueltas (ida y vuelta)
+    rounds_vuelta1 = _round_robin_schedule(team_ids)
+    rounds_vuelta2 = [
+        [(a, h) for h, a in rnd] for rnd in rounds_vuelta1
+    ]
+    all_rounds = rounds_vuelta1 + rounds_vuelta2   # 18 fechas para 10 equipos
+
+    # Última ronda jugada (para continuar la numeración)
+    cur.execute("SELECT MAX(round) FROM matches WHERE season_id = %s", (sid,))
+    last_round = (cur.fetchone()[0] or 0)
+
+    rows = []
+    round_offset = last_round    # rounds se asignarán last_round+1, +2, ...
+    pending_round = round_offset
+
+    for rnd_idx, rnd_pairs in enumerate(all_rounds):
+        # Solo insertar fechas cuyas parejas NO estén todas jugadas
+        new_in_round = [
+            (h, a) for h, a in rnd_pairs
+            if h != -1 and a != -1 and (h, a) not in played_pairs
+        ]
+        if not new_in_round:
+            continue   # toda esta fecha ya fue jugada
+
+        pending_round += 1
+        for h_id, a_id in new_in_round:
+            rows.append((sid, pending_round, None, h_id, a_id, False))
+
+    if rows:
+        execute_values(cur, """
+            INSERT INTO matches
+                (season_id, round, match_date, home_team_id, away_team_id, is_played)
+            VALUES %s
+            ON CONFLICT DO NOTHING
+        """, rows)
+        logger.info(f"  {len(rows)} partidos pendientes insertados (temporada {current_season})")
+    else:
+        logger.info(f"  Sin partidos pendientes para {current_season}")
+
+    return len(rows)
+
+
 # ── Paso 6: ELO histórico ─────────────────────────────────────────────────────
 
 def compute_and_seed_elo(cur, matches: list[dict], season_id_map: dict[int, int]) -> None:
@@ -388,6 +489,9 @@ def main():
             logger.info("Paso 4: Posiciones…")
             n_standings = seed_standings(cur, all_standings, season_id_map)
 
+            logger.info(f"Paso 4b: Partidos pendientes {CURRENT_SEASON}…")
+            n_pending = seed_pending_matches(cur, all_matches, season_id_map)
+
             if not args.skip_elo:
                 logger.info("Paso 5: ELO histórico…")
                 compute_and_seed_elo(cur, all_matches, season_id_map)
@@ -395,9 +499,10 @@ def main():
         conn.commit()
         logger.info("✓ Commit exitoso")
         print(f"\n✓ Seed completado:")
-        print(f"  Partidos:    {n_matches}")
-        print(f"  Posiciones:  {n_standings}")
-        print(f"  Temporadas:  {sorted(season_id_map.keys())}")
+        print(f"  Partidos jugados: {n_matches}")
+        print(f"  Partidos pend.:   {n_pending}")
+        print(f"  Posiciones:       {n_standings}")
+        print(f"  Temporadas:       {sorted(season_id_map.keys())}")
     except Exception as e:
         conn.rollback()
         logger.error(f"Error: {e}", exc_info=True)

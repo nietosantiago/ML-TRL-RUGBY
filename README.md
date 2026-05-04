@@ -2,6 +2,8 @@
 
 Sistema completo de análisis estadístico, predicción y simulación para el **Torneo Regional del Litoral de Rugby** (Argentina).
 
+Cubre temporadas **2015–2026** con datos reales extraídos de [rugbyarchive.net](http://rugbyarchive.net).
+
 ## Arquitectura
 
 ```
@@ -9,10 +11,10 @@ TRL/
 ├── backend/          FastAPI + SQLAlchemy async (Python 3.12)
 ├── frontend/         Next.js 14 + TypeScript + Tailwind + Recharts
 ├── models/           ELO, Regresión Logística, XGBoost, Monte Carlo
-├── scripts/          Scraper, setup DB, actualización automática
+├── scripts/          Scraper, setup DB, seed con datos reales
 ├── data/
 │   ├── schemas/      Esquema PostgreSQL (init.sql)
-│   ├── raw/          Datos crudos del scraper (no commiteados)
+│   ├── raw/          Datos crudos del scraper (no commiteados, ~470 KB)
 │   └── models/       Modelos entrenados .pkl (no commiteados)
 ```
 
@@ -23,7 +25,7 @@ TRL/
 | Base de datos | PostgreSQL 16 |
 | Backend | FastAPI 0.115, SQLAlchemy 2.0, asyncpg |
 | Modelos | scikit-learn, XGBoost, NumPy |
-| Scraping | requests, BeautifulSoup4 |
+| Scraping | urllib (stdlib, sin dependencias externas) |
 | Frontend | Next.js 14, TypeScript, Tailwind CSS, Recharts |
 | Orquestación | Docker Compose |
 
@@ -35,10 +37,12 @@ TRL/
 
 ```bash
 cp .env.example .env
-# Editar .env con la URL real del torneo
-
 docker compose up -d
-# Seed con datos de ejemplo:
+
+# 1. Descargar datos reales del TRL (2015–2026)
+docker compose exec backend python scripts/scraper.py --all
+
+# 2. Cargar en la DB + calcular ELO histórico
 docker compose exec backend python scripts/seed_data.py
 ```
 
@@ -63,32 +67,35 @@ cp .env.example .env
 # 3. Crear base de datos
 make db-init
 
-# 4. Seed con datos de ejemplo
-make db-seed
+# 4. Descargar todos los datos históricos (2015–2026)
+python scripts/scraper.py --all
 
-# 5. Iniciar backend (en una terminal)
+# 5. Cargar datos reales + calcular ELO desde 2015
+python scripts/seed_data.py
+
+# 6. Iniciar backend (en una terminal)
 make dev-backend
 
-# 6. Iniciar frontend (en otra terminal)
+# 7. Iniciar frontend (en otra terminal)
 make dev-frontend
 ```
 
 ---
 
-## Configurar el scraper
+## Fuente de datos
 
-Editá `scripts/scraper.py` y cambiá:
+Los datos provienen de la API interna de [rugbyarchive.net](http://rugbyarchive.net):
 
-```python
-TARGET_URL = "https://TU_URL_AQUI.com"      # ← URL real del TRL
+```
+http://rugbyarchive.net/api/stagionicompetizione/121/stagione/{year}/?cultura=en
 ```
 
-Luego ejecutá:
-```bash
-make scrape SEASON=2024
-```
+- **Competición:** TRL (ID 121)
+- **Temporadas disponibles:** 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026
+- **Total histórico:** ~1.176 partidos jugados
+- **Actualización:** `python scripts/scraper.py --season 2026 --save-db`
 
-Para actualización automática diaria (cron):
+Para actualización automática diaria:
 ```bash
 # Agregar a crontab:
 0 23 * * * cd /ruta/al/proyecto && make update >> logs/cron.log 2>&1
@@ -99,18 +106,19 @@ Para actualización automática diaria (cron):
 ## Modelos predictivos
 
 ### 1. ELO Avanzado
-- Rating inicial: 1500
+- Rating inicial: 1500, entrenado con partidos 2015–2025
 - Ventaja de localía: +60 puntos ELO
-- K-factor dinámico según margen de victoria
+- K-factor dinámico según margen de victoria: `K × ln(|diff|+1) / ln(2)`
 - Regresión a la media entre temporadas (30%)
+- Campeones históricos aprendidos: Duendes (×4), Jockey Club Rosario (×2), G.E.R., Old Resian, Estudiantes Paraná
 
-### 2. Regresión Logística
-Features:
+### 2. Regresión Logística (calibrada)
+Features (22 en total):
 - Diferencia de ELO (con localía)
 - Forma últimos 5 partidos (ponderada)
 - % victorias local/visitante
 - Diferencia de puntos promedio
-- Racha actual
+- Racha actual, H2H win rate
 
 ### 3. XGBoost
 - Mismo set de features + interacciones automáticas
@@ -123,18 +131,14 @@ Features:
 make validate
 ```
 
-Ejecuta walk-forward CV sobre todas las temporadas disponibles y reporta:
-- Log Loss (principal métrica)
-- Accuracy
-- Brier Score
-
-El mejor modelo se selecciona automáticamente para producción.
+Ejecuta walk-forward CV sobre 2015–2025 y reporta:
+- Log Loss · Accuracy · Brier Score
 
 ---
 
 ## Simulación Monte Carlo
 
-10.000+ iteraciones del resto de la temporada:
+10.000+ iteraciones del resto de la temporada 2026:
 
 ```python
 from models.monte_carlo import MonteCarloSimulator, SimulationConfig
@@ -144,8 +148,7 @@ sim = MonteCarloSimulator(config)
 result = sim.simulate(standings, pending_matches)
 
 # Output por equipo:
-# - P(campeón)
-# - P(clasificar a semis)
+# - P(campeón), P(clasificar a semis)
 # - Distribución de posiciones (histograma)
 # - Puntos finales: media, p5, p25, p50, p75, p95
 ```
@@ -174,26 +177,27 @@ Documentación interactiva: http://localhost:8000/docs
 | Página | URL | Descripción |
 |--------|-----|-------------|
 | Dashboard | `/` | Tabla + probabilidades + últimos resultados |
-| Posiciones | `/standings` | Tabla completa + evolución ELO + gráfico |
-| Partidos | `/matches` | Resultados, fixture y predicciones |
+| Posiciones | `/standings` | Tabla completa + evolución ELO |
+| Partidos | `/matches` | Resultados, fixture y predicciones ELO |
 | Simulador | `/simulator` | Simulación interactiva con resultados fijados |
 
 ---
 
-## Subir a GitHub
+## Campeones históricos TRL
 
-```bash
-cd TRL
-git init
-git add .
-git commit -m "feat: TRL Rugby Analytics — MVP completo"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/trl-rugby.git
-git push -u origin main
-```
-
-> **Nota:** Los archivos `.env`, `data/raw/`, `data/models/` y `logs/` están en `.gitignore`
-> y no se suben por seguridad/tamaño.
+| Año | Campeón |
+|-----|---------|
+| 2015 | Duendes |
+| 2016 | Duendes |
+| 2017 | Jockey Club Rosario |
+| 2018 | Duendes |
+| 2019 | Old Resian |
+| 2021 | Duendes |
+| 2022 | G.E.R. |
+| 2023 | Estudiantes Paraná |
+| 2024 | Jockey Club Rosario |
+| 2025 | Jockey Club Rosario |
+| 2026 | En curso |
 
 ---
 
