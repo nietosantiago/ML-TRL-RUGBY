@@ -94,8 +94,6 @@ def seed_teams(cur, matches: list[dict]) -> dict[int, str]:
         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
     """, rows)
 
-    # Resetear la secuencia para que futuros INSERTs sin ID no colisionen
-    cur.execute("SELECT setval('teams_id_seq', (SELECT MAX(id) FROM teams))")
     logger.info(f"  {len(teams)} equipos insertados/actualizados")
     return teams
 
@@ -206,11 +204,18 @@ def seed_matches(cur, matches: list[dict], season_id_map: dict[int, int]) -> int
 
 def seed_standings(cur, standings: list[dict], season_id_map: dict[int, int]) -> int:
     """Inserta la tabla de posiciones final de cada temporada (snapshot ronda 0)."""
-    rows = []
+    # Deduplicar: si un equipo aparece en múltiples fases, quedarse con el de más puntos
+    best: dict[tuple, dict] = {}
     for s in standings:
         sid = season_id_map.get(s["season"])
         if not sid:
             continue
+        key = (sid, s["team_id"])
+        if key not in best or s["total_points"] > best[key]["total_points"]:
+            best[key] = {**s, "_sid": sid}
+
+    rows = []
+    for (sid, _), s in best.items():
         rows.append((
             sid, s["team_id"], 0,       # round=0 = snapshot final de fase
             s["played"], s["won"], s["drawn"], s["lost"],
@@ -248,7 +253,7 @@ def _round_robin_schedule(teams: list[int]) -> list[list[tuple[int, int]]]:
     """
     Genera un calendario round-robin para n equipos (n par).
     Retorna lista de rondas, cada ronda es lista de (home_id, away_id).
-    Algoritmo de rotación estándar.
+    Algoritmo de rotación estándar: fija posición 0, rota el resto.
     """
     n = len(teams)
     if n % 2 != 0:
@@ -256,15 +261,18 @@ def _round_robin_schedule(teams: list[int]) -> list[list[tuple[int, int]]]:
         n += 1
 
     rounds = []
-    fixed = teams[0]
-    rotating = list(teams[1:])
+    t = list(teams)
 
     for _ in range(n - 1):
-        round_pairs = [(fixed, rotating[0])]
-        for i in range(1, n // 2):
-            round_pairs.append((rotating[i], rotating[n - 2 - i]))
+        round_pairs = []
+        for i in range(n // 2):
+            home = t[i]
+            away = t[n - 1 - i]
+            if home != -1 and away != -1 and home != away:
+                round_pairs.append((home, away))
         rounds.append(round_pairs)
-        rotating = [rotating[-1]] + rotating[:-1]   # rotar
+        # Fijar t[0], rotar t[1:]
+        t = [t[0]] + [t[-1]] + t[1:-1]
 
     return rounds
 

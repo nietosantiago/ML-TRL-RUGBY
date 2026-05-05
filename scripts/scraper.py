@@ -127,10 +127,12 @@ def parse_playoffs(data: dict, year: int) -> list[dict]:
         for sf in fase.get("sottoFasi", []):
             for turno in (sf.get("turniFasiFinali") or []):
                 turno_name = _fix(turno["nomeTurno"])
-                for partido in turno.get("partite", []):
+                for partido in (turno.get("partite") or []):
+                    if not partido or not partido.get("primaSquadra") or not partido.get("secondaSquadra"):
+                        continue
                     eq1 = _fix(partido["primaSquadra"]["nome"])
                     eq2 = _fix(partido["secondaSquadra"]["nome"])
-                    winner = _fix(partido["vincente"]["nome"])
+                    winner = _fix((partido.get("vincente") or {}).get("nome", ""))
                     for p in partido.get("partite", []):
                         try:
                             hs, aw = map(int, str(p["risultato"]).split("-"))
