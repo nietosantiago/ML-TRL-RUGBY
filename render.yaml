@@ -2,6 +2,7 @@ services:
   - type: web
     name: trl-rugby-api
     env: python
+    runtime: python
     region: oregon
     plan: free
     rootDir: backend
