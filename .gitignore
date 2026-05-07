@@ -19,7 +19,6 @@ build/
 # Data (no commitear datos crudos)
 data/raw/
 data/processed/
-data/models/
 logs/
 
 # Node / Next.js
@@ -41,9 +40,6 @@ Thumbs.db
 # Docker
 *.pid
 
-# Modelos ML (archivos grandes, usar Git LFS si es necesario)
-*.pkl
+# Otros binarios grandes
 *.joblib
-*.model
 *.bin
-!data/models/.gitkeep
