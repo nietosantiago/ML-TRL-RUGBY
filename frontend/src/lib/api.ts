@@ -6,7 +6,7 @@ import type {
   ModelType, MatchResult,
 } from './types';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 const API  = `${BASE}/api/v1`;
 
 const http = axios.create({

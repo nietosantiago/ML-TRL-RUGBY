@@ -53,11 +53,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS — API pública sin autenticación, permite todos los orígenes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
