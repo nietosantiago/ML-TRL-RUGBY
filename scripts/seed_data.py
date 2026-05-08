@@ -160,7 +160,6 @@ def assign_round_numbers(matches: list[dict]) -> dict[tuple, int]:
 
 def seed_matches(cur, matches: list[dict], season_id_map: dict[int, int]) -> int:
     """Inserta todos los partidos. Retorna cantidad insertada."""
-    # Agrupar por temporada
     by_season: dict[int, list[dict]] = defaultdict(list)
     for m in matches:
         by_season[m["season"]].append(m)
@@ -170,6 +169,12 @@ def seed_matches(cur, matches: list[dict], season_id_map: dict[int, int]) -> int
         sid = season_id_map.get(year)
         if not sid:
             continue
+
+        # Para la temporada activa: borrar todos los existentes y re-insertar
+        # (garantiza que partidos jugados reemplacen a los pendientes)
+        if str(year) == CURRENT_SEASON:
+            cur.execute("DELETE FROM matches WHERE season_id = %s", (sid,))
+            logger.info(f"  {year}: matches existentes eliminados para re-seedear")
 
         round_map = assign_round_numbers(season_matches)
         rows = []
@@ -184,7 +189,7 @@ def seed_matches(cur, matches: list[dict], season_id_map: dict[int, int]) -> int
                 sid, rnum, date_val,
                 m["home_team_id"], m["away_team_id"],
                 m["home_score"], m["away_score"],
-                True,  # is_played: el JSON solo tiene partidos jugados
+                True,
             ))
 
         execute_values(cur, """
@@ -195,7 +200,7 @@ def seed_matches(cur, matches: list[dict], season_id_map: dict[int, int]) -> int
             ON CONFLICT DO NOTHING
         """, rows)
         total += len(rows)
-        logger.info(f"  {year}: {len(rows)} partidos")
+        logger.info(f"  {year}: {len(rows)} partidos jugados")
 
     return total
 
