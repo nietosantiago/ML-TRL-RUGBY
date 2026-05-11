@@ -268,7 +268,8 @@ def main():
         data = json.load(f)
 
     logger.info(f"Construyendo dataset con temporadas: {args.seasons}")
-    df = build_dataset(data["all_matches"], set(args.seasons))
+    all_matches = data.get("all_matches") or data.get("matches", [])
+    df = build_dataset(all_matches, set(args.seasons))
 
     if df.empty:
         logger.error("Dataset vacío. Verificá las temporadas disponibles.")
