@@ -69,7 +69,7 @@ def _parse_date(s: str):
 
 
 def get_conn():
-    db_url = os.getenv("DATABASE_URL")
+    db_url = (os.getenv("DATABASE_URL") or "").strip()
     if db_url:
         return psycopg2.connect(db_url)
     return psycopg2.connect(

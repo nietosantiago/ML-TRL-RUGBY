@@ -163,7 +163,7 @@ def parse_champion(data: dict) -> Optional[str]:
 # ── DB ────────────────────────────────────────────────────────────────────────
 
 def get_db_conn():
-    db_url = os.getenv("DATABASE_URL")
+    db_url = (os.getenv("DATABASE_URL") or "").strip()
     if db_url:
         return psycopg2.connect(db_url)
     return psycopg2.connect(
