@@ -163,6 +163,9 @@ def parse_champion(data: dict) -> Optional[str]:
 # ── DB ────────────────────────────────────────────────────────────────────────
 
 def get_db_conn():
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        return psycopg2.connect(db_url)
     return psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),
         port=int(os.getenv("DB_PORT", 5432)),
@@ -329,7 +332,8 @@ def main():
 
     # Guardar raw JSON
     Path(args.output).mkdir(parents=True, exist_ok=True)
-    out_path = Path(args.output) / f"trl_{'+'.join(seasons)}.json"
+    out_name = "trl_all_seasons.json" if args.all else f"trl_{'+'.join(seasons)}.json"
+    out_path = Path(args.output) / out_name
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({
             "meta": summary,

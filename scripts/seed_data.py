@@ -69,6 +69,9 @@ def _parse_date(s: str):
 
 
 def get_conn():
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        return psycopg2.connect(db_url)
     return psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),
         port=int(os.getenv("DB_PORT", 5432)),
@@ -483,9 +486,11 @@ def main():
             # Verificar si ya hay datos
             cur.execute("SELECT COUNT(*) FROM teams")
             existing_teams = cur.fetchone()[0]
-            if existing_teams > 0 and not args.force:
-                logger.warning(f"Ya existen {existing_teams} equipos en la DB. Usá --force para sobreescribir.")
-                sys.exit(0)
+            if existing_teams > 0:
+                if args.force:
+                    logger.info("--force: limpiando datos previos…")
+                else:
+                    logger.info(f"DB ya tiene {existing_teams} equipos — actualizando datos de {CURRENT_SEASON}…")
             if args.force:
                 logger.info("Paso 0: Limpiando datos previos…")
                 clear_existing_data(cur)
