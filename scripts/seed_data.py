@@ -474,9 +474,18 @@ def main():
     with open(RAW_JSON, encoding="utf-8") as f:
         data = json.load(f)
 
-    all_matches   = data["all_matches"]
-    all_standings = data["all_standings"]
-    season_meta   = data["seasons"]
+    # El scraper guarda las claves como "matches"/"standings"; soportar ambos formatos
+    all_matches   = data.get("all_matches") or data.get("matches", [])
+    all_standings = data.get("all_standings") or data.get("standings", [])
+    # Construir season_meta desde los partidos si no viene como dict
+    raw_meta = data.get("seasons", {})
+    if isinstance(raw_meta, list):
+        season_meta = {str(yr): {} for yr in raw_meta}
+    elif isinstance(raw_meta, dict):
+        season_meta = raw_meta
+    else:
+        season_meta = {str(m["season"]) for m in all_matches}
+        season_meta = {yr: {} for yr in season_meta}
 
     logger.info(f"  {len(all_matches)} partidos, {len(all_standings)} posiciones en {len(season_meta)} temporadas")
 
