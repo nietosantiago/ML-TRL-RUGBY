@@ -36,6 +36,15 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: python scripts/seed_data.py
 
+      - name: Cargar fixture oficial 2026
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: python scripts/load_fixture_2026.py
+
       - name: Re-entrenar modelos ML
         run: python scripts/train_models.py
 
