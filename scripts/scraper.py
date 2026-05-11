@@ -17,6 +17,7 @@ import urllib.request
 import psycopg2
 from psycopg2.extras import execute_values
 
+Path("logs").mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
