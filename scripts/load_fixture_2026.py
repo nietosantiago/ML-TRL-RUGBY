@@ -238,7 +238,7 @@ def main():
 
     # Separar jugados vs pendientes del fixture
     pending = [
-        (sid, rnd, mdate, h, a)
+        (sid, rnd, mdate, h, a, False)
         for sid, rnd, mdate, h, a in resolved
         if (h, a) not in played_pairs
     ]
@@ -248,7 +248,7 @@ def main():
 
     if args.dry_run:
         print("\n[DRY RUN] Partidos que se insertarían como pendientes:")
-        for sid, rnd, mdate, h, a in pending:
+        for sid, rnd, mdate, h, a, _ in pending:
             print(f"  Fecha {rnd:2d} | {mdate} | {teams[h]:35s} vs {teams[a]}")
         cur.close(); conn.close()
         return
