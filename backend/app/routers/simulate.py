@@ -55,13 +55,7 @@ def _run_simulation_sync(
         MatchOdds,
     )
 
-    conn = psycopg2.connect(
-        host=settings.db_host,
-        port=settings.db_port,
-        dbname=settings.db_name,
-        user=settings.db_user,
-        password=settings.db_password,
-    )
+    conn = psycopg2.connect(settings.database_url)
 
     try:
         standings = load_current_standings_from_db(conn, season_id)

@@ -112,15 +112,8 @@ async def _predict_ml(
     )
 
     # No podemos pasar async conn a funciones sync; usamos psycopg2 directamente
-    import os
     import psycopg2
-    sync_conn = psycopg2.connect(
-        host=settings.db_host,
-        port=settings.db_port,
-        dbname=settings.db_name,
-        user=settings.db_user,
-        password=settings.db_password,
-    )
+    sync_conn = psycopg2.connect(settings.database_url)
 
     try:
         home_feat = get_current_team_features(sync_conn, home_id, season_id)
