@@ -1,0 +1,47 @@
+name: Actualizar datos TRL
+
+on:
+  schedule:
+    # Corre lunes, miércoles y viernes a las 23:00 UTC (20:00 Argentina)
+    - cron: '0 23 * * 1,3,5'
+  workflow_dispatch:  # permite correrlo manualmente desde GitHub
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          pip install psycopg2-binary python-dotenv requests numpy pandas scikit-learn xgboost
+
+      - name: Scraper — temporada 2026
+        run: python scripts/scraper.py --season 2026
+
+      - name: Seed — actualizar DB en Render
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: python scripts/seed_data.py
+
+      - name: Re-entrenar modelos ML
+        run: python scripts/train_models.py
+
+      - name: Guardar modelos actualizados
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'data/models/'
+          message: 'chore: modelos ML actualizados automáticamente'
+          default_author: github_actions
