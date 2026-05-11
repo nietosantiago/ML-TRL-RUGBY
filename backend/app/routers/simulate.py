@@ -79,7 +79,8 @@ def _run_simulation_sync(
 
             predictor = EloPredictor()
         else:
-            model_path = Path("data/models") / f"{model_type}_model.pkl"
+            _repo_root = Path(__file__).parent.parent.parent.parent
+            model_path = _repo_root / "data" / "models" / f"{model_type}_model.pkl"
             if not model_path.exists():
                 elo = EloSystem()
                 elo.load_ratings_from_db(conn)
