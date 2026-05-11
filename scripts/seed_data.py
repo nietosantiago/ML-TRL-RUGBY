@@ -418,8 +418,8 @@ def compute_and_seed_elo(cur, matches: list[dict], season_id_map: dict[int, int]
         else:
             h_result, a_result = "draw", "draw"
 
-        elo_rows.append((h_id, sid, h_bef, h_aft, a_id, h_result, True,  int(diff)))
-        elo_rows.append((a_id, sid, a_bef, a_aft, h_id, a_result, False, int(-diff)))
+        elo_rows.append((int(h_id), sid, float(h_bef), float(h_aft), int(a_id), h_result, True,  int(diff)))
+        elo_rows.append((int(a_id), sid, float(a_bef), float(a_aft), int(h_id), a_result, False, int(-diff)))
 
     execute_values(cur, """
         INSERT INTO elo_ratings
@@ -437,7 +437,7 @@ def compute_and_seed_elo(cur, matches: list[dict], season_id_map: dict[int, int]
             INSERT INTO team_stats (team_id, season_id, elo_rating)
             VALUES (%s, %s, %s)
             ON CONFLICT (team_id, season_id) DO UPDATE SET elo_rating = EXCLUDED.elo_rating
-        """, (tid, sid_2026, rating))
+        """, (int(tid), sid_2026, float(rating)))
 
     logger.info(f"  {len(elo_rows)} filas ELO insertadas")
     logger.info("  ELO ratings actuales:")
