@@ -34,7 +34,8 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"=== TRL API {settings.app_version} iniciando ===")
-    logger.info(f"DB: {settings.db_host}:{settings.db_port}/{settings.db_name}")
+    db_display = settings.database_url.split("@")[-1] if "@" in settings.database_url else "configured"
+    logger.info(f"DB: {db_display}")
     logger.info(f"Temporada activa: {settings.current_season}")
     yield
     logger.info("=== TRL API cerrando ===")
@@ -95,3 +96,8 @@ async def root():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+# Vercel serverless handler
+from mangum import Mangum
+handler = Mangum(app, lifespan="off")

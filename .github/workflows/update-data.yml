@@ -29,7 +29,7 @@ jobs:
       - name: Scraper — todas las temporadas
         run: python scripts/scraper.py --all
 
-      - name: Seed — actualizar DB en Render
+      - name: Seed — actualizar DB en Supabase
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python scripts/seed_data.py

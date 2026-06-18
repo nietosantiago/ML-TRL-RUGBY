@@ -126,7 +126,7 @@ class MatchPredictionOut(BaseModel):
 
 class SimulationRequest(BaseModel):
     season_id:     Optional[int] = None
-    n_iterations:  int = Field(10_000, ge=1_000, le=100_000)
+    n_iterations:  int = Field(1_000, ge=100, le=10_000)
     model:         str = Field("elo", description="Modelo para probabilidades")
 
 class TeamSimResult(BaseModel):
@@ -158,7 +158,7 @@ class FixedResult(BaseModel):
 
 class CustomSimulationRequest(BaseModel):
     season_id:     Optional[int] = None
-    n_iterations:  int = Field(10_000, ge=1_000, le=100_000)
+    n_iterations:  int = Field(1_000, ge=100, le=10_000)
     model:         str = "elo"
     fixed_results: list[FixedResult] = []
 

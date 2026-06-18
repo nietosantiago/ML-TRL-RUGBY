@@ -13,8 +13,9 @@ class Settings(BaseSettings):
         extra="ignore",          # ignorar vars del .env que no estén definidas aquí
     )
 
-    # Database — DATABASE_URL (Render) o vars individuales (local)
-    database_url_env: Optional[str] = Field(None, alias="DATABASE_URL")
+    # Database
+    database_url_env:       Optional[str] = Field(None, alias="DATABASE_URL")
+    async_database_url_env: Optional[str] = Field(None, alias="ASYNC_DATABASE_URL")
 
     db_host:     str = "localhost"
     db_port:     int = 5432
@@ -51,6 +52,8 @@ class Settings(BaseSettings):
 
     @property
     def async_database_url(self) -> str:
+        if self.async_database_url_env:
+            return self.async_database_url_env
         return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 
