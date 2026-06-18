@@ -96,8 +96,3 @@ async def root():
         "docs": "/docs",
         "health": "/health",
     }
-
-
-# Vercel serverless handler
-from mangum import Mangum
-handler = Mangum(app, lifespan="off")
