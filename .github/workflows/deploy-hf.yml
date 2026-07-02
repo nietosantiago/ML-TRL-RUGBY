@@ -1,0 +1,32 @@
+name: Deploy backend a Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "data/models/**"
+      - ".hf/**"
+      - "scripts/deploy_hf.py"
+  workflow_dispatch:
+
+env:
+  HF_SPACE_ID: TODO-USUARIO-HF/trl-rugby-api  # completar con el usuario real de HF
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Deploy al Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/deploy_hf.py
