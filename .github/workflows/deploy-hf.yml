@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  HF_SPACE_ID: TODO-USUARIO-HF/trl-rugby-api  # completar con el usuario real de HF
+  HF_SPACE_ID: nietosantiago/trl-rugby-api
 
 jobs:
   deploy:
