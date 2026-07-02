@@ -135,3 +135,52 @@ export interface StandingsEvolution {
 
 export type ModelType = 'elo' | 'logistic' | 'xgboost';
 export type MatchResult = 'home' | 'draw' | 'away';
+
+// ─── Video Analysis (detección de situaciones de juego) ──────────────────────
+
+export type EventType = 'ruck' | 'tackle' | 'kick' | 'carry';
+
+export interface MatchEvent {
+  id: number;
+  event_type: EventType;
+  t_start: number;
+  t_end: number | null;
+  confidence: number | null;
+  n_players: number | null;
+  x_norm: number | null;
+  y_norm: number | null;
+  meta: Record<string, unknown> | null;
+}
+
+export interface VideoAnalysis {
+  id: number;
+  video_name: string;
+  match_id: number | null;
+  match_label: string | null;
+  duration_seconds: number | null;
+  fps: number | null;
+  pipeline_version: string | null;
+  analyzed_at: string | null;
+  n_events: number;
+  events_by_type: Record<string, number>;
+}
+
+export interface VideoAnalysisDetail extends VideoAnalysis {
+  events: MatchEvent[];
+}
+
+export interface TimelineBucket {
+  t_start: number;
+  counts: Record<string, number>;
+}
+
+export interface AnalysisSummary {
+  analysis_id: number;
+  video_name: string;
+  duration_seconds: number | null;
+  events_by_type: Record<string, number>;
+  avg_confidence: Record<string, number>;
+  ruck_total_seconds: number;
+  bucket_seconds: number;
+  timeline: TimelineBucket[];
+}

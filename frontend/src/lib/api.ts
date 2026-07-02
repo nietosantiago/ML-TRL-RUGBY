@@ -101,3 +101,26 @@ export const customSimulation = (params: {
 // ─── Health ───────────────────────────────────────────────────────────────────
 export const fetchHealth = (): Promise<{ status: string; version: string; db: string }> =>
   http.get('/health', { baseURL: BASE }).then(r => r.data);
+
+// ─── Video Analysis ───────────────────────────────────────────────────────────
+import type { VideoAnalysis, VideoAnalysisDetail, AnalysisSummary, EventType } from './types';
+
+export const fetchAnalyses = (): Promise<VideoAnalysis[]> =>
+  http.get('/analysis/').then(r => r.data);
+
+export const fetchAnalysis = (
+  id: number,
+  params?: { event_type?: EventType; min_confidence?: number },
+): Promise<VideoAnalysisDetail> =>
+  http.get(`/analysis/${id}`, { params }).then(r => r.data);
+
+export const fetchAnalysisSummary = (
+  id: number,
+  bucketSeconds = 300,
+): Promise<AnalysisSummary> =>
+  http.get(`/analysis/${id}/summary`, {
+    params: { bucket_seconds: bucketSeconds },
+  }).then(r => r.data);
+
+export const deleteAnalysis = (id: number): Promise<void> =>
+  http.delete(`/analysis/${id}`).then(() => undefined);

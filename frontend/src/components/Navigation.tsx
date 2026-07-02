@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
-import { BarChart2, Calendar, Target, TrendingUp } from 'lucide-react';
+import { BarChart2, Calendar, Film, Target, TrendingUp } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/',            label: 'Dashboard',    icon: BarChart2  },
   { href: '/standings',   label: 'Posiciones',   icon: TrendingUp },
   { href: '/matches',     label: 'Partidos',     icon: Calendar   },
   { href: '/simulator',   label: 'Simulador',    icon: Target     },
+  { href: '/analysis',    label: 'Análisis',     icon: Film       },
 ];
 
 export default function Navigation() {

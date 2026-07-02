@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from .config import get_settings
 from .database import engine, get_db_context
-from .routers import teams, matches, standings, predict, simulate
+from .routers import teams, matches, standings, predict, simulate, analysis
 
 logging.basicConfig(
     level=logging.INFO,
@@ -70,6 +70,7 @@ app.include_router(matches.router,   prefix=API_PREFIX)
 app.include_router(standings.router, prefix=API_PREFIX)
 app.include_router(predict.router,   prefix=API_PREFIX)
 app.include_router(simulate.router,  prefix=API_PREFIX)
+app.include_router(analysis.router,  prefix=API_PREFIX)
 
 
 @app.get("/health", tags=["health"])

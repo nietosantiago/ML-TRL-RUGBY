@@ -283,3 +283,35 @@ FROM matches m
 JOIN teams ht ON ht.id = m.home_team_id
 JOIN teams at ON at.id = m.away_team_id
 JOIN seasons se ON se.id = m.season_id;
+
+-- ============================================================
+--  VIDEO ANALYSIS: detección de situaciones de juego
+-- ============================================================
+CREATE TABLE IF NOT EXISTS video_analyses (
+    id              SERIAL PRIMARY KEY,
+    match_id        INTEGER REFERENCES matches(id) ON DELETE SET NULL,
+    video_name      VARCHAR(255) NOT NULL,
+    duration_seconds FLOAT,
+    fps             FLOAT,
+    pipeline_version VARCHAR(20),
+    params          JSONB,
+    analyzed_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS match_events (
+    id          SERIAL PRIMARY KEY,
+    analysis_id INTEGER NOT NULL REFERENCES video_analyses(id) ON DELETE CASCADE,
+    event_type  VARCHAR(20) NOT NULL,   -- ruck | tackle | kick | carry
+    t_start     FLOAT NOT NULL,         -- segundos desde el inicio del video
+    t_end       FLOAT,
+    confidence  FLOAT,
+    n_players   INTEGER,
+    x_norm      FLOAT,                  -- posición normalizada [0,1] en el frame
+    y_norm      FLOAT,
+    meta        JSONB,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_match_events_analysis
+    ON match_events(analysis_id, event_type);

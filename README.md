@@ -45,6 +45,7 @@ Esta plataforma usa **datos históricos del TRL desde 2015** y modelos de Machin
 | **Partidos** | Fixture completo, resultados jugados y predicción ELO para partidos pendientes |
 | **Posiciones** | Tabla detallada con evolución del rating ELO a lo largo de la temporada |
 | **Simulador** | Simulación Monte Carlo interactiva — fijá resultados y mirá cómo cambian las chances |
+| **Análisis** | Situaciones de juego (rucks, tackles, kicks, carries) detectadas por Computer Vision sobre el video del partido, con timeline sincronizado al video |
 
 ---
 
@@ -72,6 +73,55 @@ Modelo estadístico supervisado entrenado con ~1.161 partidos históricos (2015�
 
 ### 3. XGBoost
 Gradient Boosting sobre las mismas 22 variables. Captura relaciones complejas que la regresión lineal no detecta, como la interacción entre localía y momento de forma.
+
+---
+
+## Análisis de video (detección de situaciones)
+
+El módulo `video_analysis/` detecta situaciones de juego directamente del video del partido:
+
+```
+Video del partido (mp4)
+    │
+    ▼
+YOLOv8 + ByteTrack          Detección y tracking de jugadores y pelota
+    │                        (muestreo a 8 fps, compensación de paneo de cámara)
+    ▼
+Heurísticas espaciales      ┌ Ruck:   ≥4 jugadores aglomerados y estáticos ≥1.5s
+    │                       ├ Tackle: dos jugadores convergen rápido y uno cae
+    │                       ├ Kick:   la pelota sale despedida y se aleja de todos
+    ▼                       └ Carry:  portador de la pelota corriendo (o corte de línea)
+eventos.json
+    │
+    ▼
+POST /api/v1/analysis/import  →  Sección "Análisis" del frontend
+```
+
+**Cómo usarlo** (el pipeline corre local — el video nunca se sube a ningún servidor):
+
+```bash
+# 1. Instalar dependencias de CV (una sola vez)
+pip install -r video_analysis/requirements.txt
+
+# 2. Crear las tablas (una sola vez, sobre la DB existente)
+python scripts/migrate_video_events.py
+
+# 3. Analizar un video e importar los eventos a la plataforma
+python scripts/analyze_video.py partido.mp4 --match-id 42 --api-url http://localhost:8000
+
+# Opcional: video anotado para calibrar umbrales
+python scripts/analyze_video.py partido.mp4 --annotate debug.mp4
+```
+
+En el frontend (`/analysis`) se puede cargar el mismo video local para reproducirlo
+sincronizado con la línea de tiempo de eventos: click en un evento → el video salta a ese instante.
+
+Los umbrales de detección viven en `video_analysis/config.py`. Las distancias se miden en
+"alturas de jugador" y las velocidades se compensan por el movimiento de cámara, así el
+pipeline es razonablemente robusto al zoom y al paneo de una transmisión estándar.
+Las heurísticas son un punto de partida honesto: la precisión depende de la calidad del video,
+y el detector de pelota (clase genérica "sports ball" de COCO) es el eslabón más débil —
+mejorarlo con un modelo fine-tuneado en pelota de rugby es el siguiente paso natural.
 
 ---
 
@@ -161,6 +211,12 @@ TRL/
 │   ├── monte_carlo.py       Simulador Monte Carlo
 │   └── feature_engineering.py  22 features para los modelos supervisados
 │
+├── video_analysis/          Detección de situaciones en video (CV)
+│   ├── detector.py          YOLOv8 + ByteTrack (jugadores y pelota)
+│   ├── events.py            Heurísticas: ruck, tackle, kick, carry
+│   ├── pipeline.py          Video → eventos JSON
+│   └── config.py            Umbrales de detección
+│
 ├── scripts/                 Pipeline de datos
 │   ├── scraper.py           Scraping de rugbyarchive.net
 │   ├── seed_data.py         Carga histórica + cálculo ELO
@@ -191,6 +247,10 @@ Documentación interactiva disponible en: [`/docs`](https://trl-rugby-api.onrend
 | `POST` | `/api/v1/predict/match` | Predicción de un partido |
 | `POST` | `/api/v1/simulate/season` | Simulación Monte Carlo |
 | `POST` | `/api/v1/simulate/custom` | Simulación con resultados fijos |
+| `POST` | `/api/v1/analysis/import` | Importar eventos detectados en video |
+| `GET` | `/api/v1/analysis/` | Lista de videos analizados |
+| `GET` | `/api/v1/analysis/{id}` | Eventos de un análisis (con filtros) |
+| `GET` | `/api/v1/analysis/{id}/summary` | Resumen: conteos, confianza, timeline |
 
 ---
 
