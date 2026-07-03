@@ -23,8 +23,10 @@ jobs:
           cache: 'pip'
 
       - name: Instalar dependencias
+        # Versiones ML pineadas = las de backend/requirements.txt: los .pkl
+        # entrenados acá deben poder cargarse en el Space con esas versiones.
         run: |
-          pip install psycopg2-binary python-dotenv requests numpy pandas scikit-learn xgboost
+          pip install psycopg2-binary python-dotenv requests numpy==1.26.4 pandas==2.2.3 scikit-learn==1.5.2 xgboost==2.1.1
 
       - name: Scraper — todas las temporadas
         run: python scripts/scraper.py --all
