@@ -5,6 +5,7 @@ Usa SQLAlchemy 2.0 async con asyncpg.
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -23,7 +24,12 @@ engine = create_async_engine(
     pool_size=5,
     max_overflow=5,
     pool_pre_ping=True,
-    connect_args={"statement_cache_size": 0},
+    # Supabase transaction pooler (pgbouncer) no soporta prepared statements
+    # con nombres fijos: sin cache + nombres únicos por statement.
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(
