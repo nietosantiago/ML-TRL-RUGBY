@@ -53,8 +53,16 @@ class Settings(BaseSettings):
     @property
     def async_database_url(self) -> str:
         if self.async_database_url_env:
-            return self.async_database_url_env
-        return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            url = self.async_database_url_env
+        else:
+            url = self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Supabase transaction pooler: el dialecto asyncpg de SQLAlchemy no debe
+        # cachear prepared statements (el pooler reasigna la conexión del server
+        # entre transacciones y el statement cacheado deja de existir).
+        if "prepared_statement_cache_size" not in url:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}prepared_statement_cache_size=0"
+        return url
 
 
 @lru_cache
