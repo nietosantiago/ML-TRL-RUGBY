@@ -54,6 +54,9 @@ with tempfile.TemporaryDirectory() as tmp:
 
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache")
     shutil.copytree(ROOT / "backend", stage / "backend", ignore=ignore)
+    # paquete models/ de la raíz: lo importan predict.py y simulate.py
+    # via sys.path.insert(repo_root) en main.py
+    shutil.copytree(ROOT / "models", stage / "models", ignore=ignore)
     (stage / "data").mkdir()
     shutil.copytree(ROOT / "data" / "models", stage / "data" / "models")
     shutil.copy(ROOT / ".hf" / "Dockerfile", stage / "Dockerfile")
