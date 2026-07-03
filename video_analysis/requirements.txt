@@ -1,5 +1,0 @@
-# Dependencias del pipeline de análisis de video (solo local, no van al deploy)
-# Instalar con: pip install -r video_analysis/requirements.txt
-ultralytics>=8.2.0
-opencv-python>=4.9.0
-requests>=2.31.0

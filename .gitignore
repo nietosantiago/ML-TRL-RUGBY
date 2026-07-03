@@ -43,10 +43,3 @@ Thumbs.db
 # Otros binarios grandes
 *.joblib
 *.bin
-
-# Análisis de video (pesos YOLO, videos y salidas locales)
-*.pt
-*.events.json
-*.mp4
-*.mkv
-*.avi

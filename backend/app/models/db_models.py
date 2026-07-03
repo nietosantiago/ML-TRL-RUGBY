@@ -140,43 +140,6 @@ class TeamStat(Base):
     team:   Mapped["Team"]   = relationship("Team", back_populates="stats")
 
 
-class VideoAnalysis(Base):
-    __tablename__ = "video_analyses"
-
-    id:               Mapped[int]             = mapped_column(Integer, primary_key=True)
-    match_id:         Mapped[Optional[int]]   = mapped_column(ForeignKey("matches.id", ondelete="SET NULL"))
-    video_name:       Mapped[str]             = mapped_column(String(255), nullable=False)
-    duration_seconds: Mapped[Optional[float]] = mapped_column(Float)
-    fps:              Mapped[Optional[float]] = mapped_column(Float)
-    pipeline_version: Mapped[Optional[str]]   = mapped_column(String(20))
-    params:           Mapped[Optional[dict]]  = mapped_column(JSONB)
-    analyzed_at:      Mapped[datetime]        = mapped_column(TIMESTAMP(timezone=True))
-    created_at:       Mapped[datetime]        = mapped_column(TIMESTAMP(timezone=True))
-
-    match:  Mapped[Optional["Match"]]     = relationship("Match")
-    events: Mapped[List["MatchEvent"]]    = relationship(
-        "MatchEvent", back_populates="analysis", cascade="all, delete-orphan"
-    )
-
-
-class MatchEvent(Base):
-    __tablename__ = "match_events"
-
-    id:          Mapped[int]             = mapped_column(Integer, primary_key=True)
-    analysis_id: Mapped[int]             = mapped_column(ForeignKey("video_analyses.id", ondelete="CASCADE"))
-    event_type:  Mapped[str]             = mapped_column(String(20), nullable=False)
-    t_start:     Mapped[float]           = mapped_column(Float, nullable=False)
-    t_end:       Mapped[Optional[float]] = mapped_column(Float)
-    confidence:  Mapped[Optional[float]] = mapped_column(Float)
-    n_players:   Mapped[Optional[int]]   = mapped_column(Integer)
-    x_norm:      Mapped[Optional[float]] = mapped_column(Float)
-    y_norm:      Mapped[Optional[float]] = mapped_column(Float)
-    meta:        Mapped[Optional[dict]]  = mapped_column(JSONB)
-    created_at:  Mapped[datetime]        = mapped_column(TIMESTAMP(timezone=True))
-
-    analysis: Mapped["VideoAnalysis"] = relationship("VideoAnalysis", back_populates="events")
-
-
 class EloRating(Base):
     __tablename__ = "elo_ratings"
 
