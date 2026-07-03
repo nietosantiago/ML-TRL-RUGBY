@@ -4,8 +4,8 @@
 
 **Predicción de partidos y simulación de temporada para el Torneo Regional del Litoral**
 
-[![Live App](https://img.shields.io/badge/App-ml--trl--rugby.vercel.app-22c55e?style=for-the-badge&logo=vercel)](https://ml-trl-rugby.vercel.app)
-[![API](https://img.shields.io/badge/API-Render-4f46e5?style=for-the-badge&logo=render)](https://trl-rugby-api.onrender.com/docs)
+[![Live App](https://img.shields.io/badge/App-trlpredict.vercel.app-22c55e?style=for-the-badge&logo=vercel)](https://trlpredict.vercel.app)
+[![API](https://img.shields.io/badge/API-Hugging%20Face%20Spaces-ffcc00?style=for-the-badge&logo=huggingface)](https://nietosantiago-trl-rugby-api.hf.space/docs)
 [![Python](https://img.shields.io/badge/Python-3.11-3776ab?style=for-the-badge&logo=python)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
@@ -34,6 +34,18 @@ Esta plataforma usa **datos históricos del TRL desde 2015** y modelos de Machin
 
 > **¿Qué pasaría si...?**
 > → El simulador interactivo permite fijar resultados hipotéticos ("¿qué pasa si Duendes pierde las próximas 3?") y ver cómo cambia la tabla.
+
+---
+
+## Alcance y proyectos relacionados
+
+Este proyecto se enfoca exclusivamente en **análisis de datos y Machine Learning**
+sobre resultados del TRL: predicción de partidos, simulación de temporada y
+estadísticas históricas.
+
+El análisis de partidos por **computer vision** (detección de rucks, tackles,
+kicks y carries sobre video con YOLOv8) es un proyecto separado:
+👉 [rugby-performance-analysis](https://github.com/nietosantiago/rugby-performance-analysis)
 
 ---
 
